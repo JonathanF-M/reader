@@ -7,6 +7,7 @@ import * as jose from "jose";
 
 function App() {
   const [status, setStatus] = useState("Idle")
+  const [rendition, setRendition] = useState(null)
 
   async function handleFiles(event) {
     const files = event.target.files;
@@ -36,8 +37,8 @@ function App() {
       
       const decrypted = await decryptFile(encryptedContent, key, iv);
       const epubBlob = new Blob([decrypted], {type: "application/epub+zip"});
-      await renderEPUB(epubBlob, "viewer")
-      
+      const bookRendition = await renderEPUB(epubBlob, "viewer");
+      setRendition(bookRendition);
       setStatus("Success!");
     } catch (err) {
       alert("Failed to load book");
@@ -50,6 +51,13 @@ function App() {
       <h1>Secure EPUB Reader</h1>
       <p>Status: {status}</p>
       <input type="file" onChange={handleFiles} />
+      {rendition && (
+        <div>
+          <button onClick={() => rendition.prev()}>Previous</button>
+          <button onClick={() => rendition.next()}>Next</button>
+
+        </div>
+      )}
       <div id="viewer" style={{ height: "600px" }}></div>
     </div>
   );
