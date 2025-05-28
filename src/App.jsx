@@ -1,38 +1,54 @@
 import './App.css';
 import React, { useState } from 'react';
-import { verifyLicense } from './verifyLicense';
+import { importAESKey, decryptFile } from './utils/crypto';
+import { publicKeyPem } from './publicKey';
+import * as jose from "jose";
 
 function App() {
+  const [status, setStatus] = useState("Idle")
 
-  const [token, setToken] = useState('');
-  const [result, setResult] = useState(null);
+  async function handleFiles(event) {
+    const files = event.target.files;
+    const licenseFile = [...files].find(f => f.name.endsWith(".json"));
+    
+    if (!licenseFile) {
+      alert("Please upload license file");
+      return;
+    }
 
-  const handleVerify = async () => {
-    const res = await verifyLicense(token.trim());
-    setResult(res);
-  };
+    try {
+      setStatus("Reading License...");
+      const licenseText = await licenseFile.text();
+      const licenseData = JSON.parse(licenseText);
+      
+      const publicKey = await jose.importSPKI(publicKeyPem, "RS256");
+      const { payload } = await jose.jwtVerify(licenseData.license, publicKey);
+      
+      const hexKey = payload.key;
+      const key = await importAESKey(hexKey);
+
+      setStatus("Decrypting book...");
+      const encryptedEpubBuffer = Uint8Array.from(atob(licenseData.encrypted_epub), c => c.charCodeAt(0));
+      
+      const iv = encryptedEpubBuffer.slice(0, 16);
+      const encryptedContent = encryptedEpubBuffer.slice(16);
+      
+      const decrypted = await decryptFile(encryptedContent, key, iv);
+      const epubBlob = new Blob([decrypted], {type: "application/epub+zip"});
+      
+      setStatus("Success!");
+    } catch (err) {
+      alert("Failed to load book");
+      setStatus("Error");
+    }
+  }
 
   return (
-    <div style={{padding: '2rem'}}>
-      <h1>Offline License Verifier</h1>
-      <textarea 
-        placeholder='Past License (JWT)'
-        rows={6}
-        cols={60}
-        value={token}
-        onChange={e => setToken(e.target.value)}
-      />
-      <br />
-      <button onClick={handleVerify}>Verify</button>
-      {result && (
-        <div>
-          {result.valid? (
-            <pre>{JSON.stringify(result.payload, null, 2)}</pre>
-          ) : (
-            <p style={{color:'red'}}>Invalid license: {result.error}</p>
-          )}
-        </div>
-      )}
+    <div>
+      <h1>Secure EPUB Reader</h1>
+      <p>Status: {status}</p>
+      <input type="file" onChange={handleFiles} />
+      <div id="viewer" style={{ height: "600px" }}></div>
     </div>
   );
 }
