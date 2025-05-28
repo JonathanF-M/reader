@@ -1,6 +1,7 @@
 import './App.css';
 import React, { useState } from 'react';
 import { importAESKey, decryptFile } from './utils/crypto';
+import { renderEPUB } from './utils/epub';
 import { publicKeyPem } from './publicKey';
 import * as jose from "jose";
 
@@ -35,6 +36,7 @@ function App() {
       
       const decrypted = await decryptFile(encryptedContent, key, iv);
       const epubBlob = new Blob([decrypted], {type: "application/epub+zip"});
+      await renderEPUB(epubBlob, "viewer")
       
       setStatus("Success!");
     } catch (err) {
