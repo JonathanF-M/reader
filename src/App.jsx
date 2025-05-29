@@ -8,29 +8,31 @@ import * as jose from "jose";
 function App() {
   const [status, setStatus] = useState("Idle")
   const [rendition, setRendition] = useState(null)
+  const [bookId, setBookId] = useState('');
 
-  async function handleFiles(event) {
-    const files = event.target.files;
-    const licenseFile = [...files].find(f => f.name.endsWith(".json"));
-    
-    if (!licenseFile) {
-      alert("Please upload license file");
-      return;
-    }
-
+  async function loadBook() {
+    if (!bookId) return;
     try {
-      setStatus("Reading License...");
-      const licenseText = await licenseFile.text();
-      const licenseData = JSON.parse(licenseText);
+      setStatus("Fetching License...");
+      const response = await fetch(`http://localhost:3000/api/v1/licenses`,  {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          user: 'test_user',
+          asset_id: bookId
+        })
+      })
+
+      const data = await response.json();
       
       const publicKey = await jose.importSPKI(publicKeyPem, "RS256");
-      const { payload } = await jose.jwtVerify(licenseData.license, publicKey);
+      const { payload } = await jose.jwtVerify(data.license, publicKey);
       
       const hexKey = payload.key;
       const key = await importAESKey(hexKey);
 
       setStatus("Decrypting book...");
-      const encryptedEpubBuffer = Uint8Array.from(atob(licenseData.encrypted_epub), c => c.charCodeAt(0));
+      const encryptedEpubBuffer = Uint8Array.from(atob(data.encrypted_epub), c => c.charCodeAt(0));
       
       const iv = encryptedEpubBuffer.slice(0, 16);
       const encryptedContent = encryptedEpubBuffer.slice(16);
@@ -50,7 +52,12 @@ function App() {
     <div>
       <h1>Secure EPUB Reader</h1>
       <p>Status: {status}</p>
-      <input type="file" onChange={handleFiles} />
+      <input
+        value={bookId}
+        onChange={(e) => setBookId(e.target.value)}
+        placeholder='Book ID'
+      />
+      <button onClick={loadBook}>Load Book</button>
       {rendition && (
         <div>
           <button onClick={() => rendition.prev()}>Previous</button>
