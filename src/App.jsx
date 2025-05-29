@@ -28,6 +28,16 @@ function App() {
       const keyPair = await generateReaderKeys();
       const publicKeyPem = await exportPublicKey(keyPair.publicKey)
       setStatus("Succesfully Generated Keys")
+
+      setStatus("Registering with server...");
+      const response = await fetch(`http://localhost:3000/api/v1/readers`,{
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ public_key: publicKeyPem })
+      })
+
+      const data = await response.json();
+
     } catch(err) {
       setStatus("Registration Failed");
     }
