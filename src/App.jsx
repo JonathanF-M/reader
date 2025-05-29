@@ -1,14 +1,36 @@
 import './App.css';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { importAESKey, decryptFile } from './utils/crypto';
+import { generateReaderKeys} from './utils/crypto';
 import { renderEPUB } from './utils/epub';
 import { publicKeyPem } from './publicKey';
 import * as jose from "jose";
 
 function App() {
   const [status, setStatus] = useState("Idle")
+  const [readerKeys, setReaderKeys] = useState(null);
+  const [isRegistered, setIsRegistered] = useState(false);
   const [rendition, setRendition] = useState(null)
   const [bookId, setBookId] = useState('');
+
+  useEffect(() => {
+    const savedKeys = localStorage.getItem('readerKeys');
+    const registered = localStorage.getItem('readerRegistered');
+
+    if (savedKeys && registered) {
+      setIsRegistered(true);
+    }
+  }, []);
+
+  async function registerReader() {
+    try {
+      setStatus("Generating Keys...");
+      const keyPair = await generateReaderKeys();
+      setStatus("Succesfully Generated Keys")
+    } catch(err) {
+      setStatus("Registration Failed");
+    }
+  }
 
   async function loadBook() {
     if (!bookId) return;
@@ -52,20 +74,27 @@ function App() {
     <div>
       <h1>Secure EPUB Reader</h1>
       <p>Status: {status}</p>
-      <input
-        value={bookId}
-        onChange={(e) => setBookId(e.target.value)}
-        placeholder='Book ID'
-      />
-      <button onClick={loadBook}>Load Book</button>
-      {rendition && (
-        <div>
-          <button onClick={() => rendition.prev()}>Previous</button>
-          <button onClick={() => rendition.next()}>Next</button>
 
-        </div>
+      {!isRegistered ? (
+        <button onClick={registerReader}>Register Reader</button>
+      ) : (
+        <>
+          <input
+            value={bookId}
+            onChange={(e) => setBookId(e.target.value)}
+            placeholder='Book ID'
+          />
+          <button onClick={loadBook}>Load Book</button>
+          {rendition && (
+            <div>
+              <button onClick={() => rendition.prev()}>Previous</button>
+              <button onClick={() => rendition.next()}>Next</button>
+
+            </div>
+          )}
+          <div id="viewer" style={{ height: "600px" }}></div>
+        </>
       )}
-      <div id="viewer" style={{ height: "600px" }}></div>
     </div>
   );
 }
