@@ -13,6 +13,13 @@ export async function generateReaderKeys() {
   return keyPair
 }
 
+export async function exportPublicKey(publicKey) {
+  const exported = await crypto.subtle.exportKey("spki", publicKey);
+  const exportedAsString = String.fromCharCode.apply(null, new Uint8Array(exported));
+  const exportedAsBase64 = btoa(exportedAsString);
+  return `-----BEGIN PUBLIC KEY-----\n${exportedAsBase64}\n-----END PUBLIC KEY-----`;
+}
+
 export async function importAESKey(hexKey) {
   const keyBuffer = Uint8Array.from(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
   return crypto.subtle.importKey(

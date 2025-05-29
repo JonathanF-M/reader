@@ -1,6 +1,6 @@
 import './App.css';
 import React, { useEffect, useState } from 'react';
-import { importAESKey, decryptFile } from './utils/crypto';
+import { importAESKey, decryptFile, exportPublicKey } from './utils/crypto';
 import { generateReaderKeys} from './utils/crypto';
 import { renderEPUB } from './utils/epub';
 import { publicKeyPem } from './publicKey';
@@ -26,6 +26,7 @@ function App() {
     try {
       setStatus("Generating Keys...");
       const keyPair = await generateReaderKeys();
+      const publicKeyPem = await exportPublicKey(keyPair.publicKey)
       setStatus("Succesfully Generated Keys")
     } catch(err) {
       setStatus("Registration Failed");
