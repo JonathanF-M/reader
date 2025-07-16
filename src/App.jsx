@@ -49,7 +49,8 @@ function App() {
         privateKey: privateKeyJwk,
         readerId: data.reader_id
       }));
-      setReaderKeys(keyPair);
+      setReaderKeys(keyPair); //there's some problem with how the reader ID is set here
+      //it's fixed by a refresh, TODO
 
       localStorage.setItem('readerRegistered', true);
       setIsRegistered(true);
