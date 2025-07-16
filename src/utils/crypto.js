@@ -57,3 +57,17 @@ export async function decryptFile(encryptedBuffer, key, iv) {
     encryptedBuffer
   );
 }
+
+export async function signMessage(privateKey, message) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const signature = await crypto.subtle.sign(
+    {
+      name: "RSA-PSS",
+      saltLength: 32,
+    },
+    privateKey,
+    data
+  );
+  return btoa(String.fromCharCode(...new Uint8Array(signature)))
+}

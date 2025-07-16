@@ -1,6 +1,6 @@
 import './App.css';
 import React, { useEffect, useState } from 'react';
-import { importAESKey, decryptFile, exportPublicKey, exportPrivateKey, importPrivateKey } from './utils/crypto';
+import { importAESKey, decryptFile, exportPublicKey, exportPrivateKey, importPrivateKey, signMessage } from './utils/crypto';
 import { generateReaderKeys} from './utils/crypto';
 import { renderEPUB } from './utils/epub';
 import { publicKeyPem } from './publicKey';
@@ -62,15 +62,31 @@ function App() {
   }
 
   async function loadBook() {
-    if (!bookId) return;
+    if (!bookId || !readerKeys) return;
     try {
+      setStatus("Signing request...");
+
+      const timestamp = Date.now()
+
+      const requestData = JSON.stringify({
+        user: 'test_user',
+        asset_id: bookId,
+        reader_id: readerKeys.readerId,
+        timestamp
+      });
+
+      const signature = await signMessage(readerKeys.privateKey, requestData);
+
       setStatus("Fetching License...");
       const response = await fetch(`http://localhost:3000/api/v1/licenses`,  {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           user: 'test_user',
-          asset_id: bookId
+          asset_id: bookId,
+          reader_id: readerKeys.readerId,
+          signature: signature,
+          timestamp
         })
       })
 
