@@ -1,6 +1,6 @@
 import './App.css';
 import React, { useEffect, useState } from 'react';
-import { importAESKey, decryptFile, exportPublicKey } from './utils/crypto';
+import { importAESKey, decryptFile, exportPublicKey, exportPrivateKey, importPrivateKey } from './utils/crypto';
 import { generateReaderKeys} from './utils/crypto';
 import { renderEPUB } from './utils/epub';
 import { publicKeyPem } from './publicKey';
@@ -14,12 +14,18 @@ function App() {
   const [bookId, setBookId] = useState('');
 
   useEffect(() => {
-    const savedKeys = localStorage.getItem('readerKeys');
-    const registered = localStorage.getItem('readerRegistered');
-
-    if (savedKeys && registered) {
-      setIsRegistered(true);
+    const fetchData = async () => {
+      const savedKeys = localStorage.getItem('readerKeys');
+      const registered = localStorage.getItem('readerRegistered');
+  
+      if (savedKeys && registered) {
+        const keyData = JSON.parse(savedKeys);
+        const privateKey = await importPrivateKey(keyData.privateKey);
+        setReaderKeys({ privateKey, readerId: keyData.readerId })
+        setIsRegistered(true);
+      }
     }
+    fetchData();
   }, []);
 
   async function registerReader() {
@@ -37,6 +43,18 @@ function App() {
       })
 
       const data = await response.json();
+
+      const privateKeyJwk = await exportPrivateKey(keyPair.privateKey);
+      localStorage.setItem('readerKeys', JSON.stringify({
+        privateKey: privateKeyJwk,
+        readerId: data.reader_id
+      }));
+      setReaderKeys(keyPair);
+
+      localStorage.setItem('readerRegistered', true);
+      setIsRegistered(true);
+      
+      setStatus("Registered")
 
     } catch(err) {
       setStatus("Registration Failed");

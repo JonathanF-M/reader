@@ -20,6 +20,25 @@ export async function exportPublicKey(publicKey) {
   return `-----BEGIN PUBLIC KEY-----\n${exportedAsBase64}\n-----END PUBLIC KEY-----`;
 }
 
+//convert to jwk for local storage
+export async function exportPrivateKey(privateKey) {
+  return await crypto.subtle.exportKey("jwk", privateKey);
+}
+
+//convert back to privatekey from jwk
+export async function importPrivateKey(jwk) {
+  return await crypto.subtle.importKey(
+    "jwk",
+    jwk,
+    {
+      name: "RSA-PSS",
+      hash: "SHA-256",
+    },
+    false,
+    ["sign"]
+  );
+}
+
 export async function importAESKey(hexKey) {
   const keyBuffer = Uint8Array.from(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
   return crypto.subtle.importKey(
