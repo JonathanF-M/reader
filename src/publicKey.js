@@ -1,4 +1,4 @@
-export const publicKeyPem = `-----BEGIN PUBLIC KEY-----
+export const serverPublicKeyPem = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvPtBoYTfVD0alTFUCmTN
 G6YlGbdJywpvPHI8D3NEMIYcVf/g+FVuHG5E0agsVXqYfU5oqKaZF2MBXNOZG/Iq
 7rAdt8ol6sQ/00iEdpzyu9Nd8BLqlIAxp6+lWo15uy/cQUsTdjAbslk523PgHIrM

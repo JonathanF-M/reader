@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { importAESKey, decryptFile, exportPublicKey, exportPrivateKey, importPrivateKey, signMessage } from './utils/crypto';
 import { generateReaderKeys} from './utils/crypto';
 import { renderEPUB } from './utils/epub';
-import { publicKeyPem } from './publicKey';
+import { serverPublicKeyPem } from './publicKey';
 import * as jose from "jose";
 
 function App() {
@@ -32,14 +32,14 @@ function App() {
     try {
       setStatus("Generating Keys...");
       const keyPair = await generateReaderKeys();
-      const publicKeyPem = await exportPublicKey(keyPair.publicKey)
+      const readerPublicKeyPem = await exportPublicKey(keyPair.publicKey)
       setStatus("Succesfully Generated Keys")
 
       setStatus("Registering with server...");
       const response = await fetch(`http://localhost:3000/api/v1/readers`,{
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ public_key: publicKeyPem })
+        body: JSON.stringify({ public_key: readerPublicKeyPem })
       })
 
       const data = await response.json();
@@ -92,7 +92,7 @@ function App() {
 
       const data = await response.json();
       
-      const publicKey = await jose.importSPKI(publicKeyPem, "RS256");
+      const publicKey = await jose.importSPKI(serverPublicKeyPem, "RS256");
       const { payload } = await jose.jwtVerify(data.license, publicKey);
       
       const hexKey = payload.key;
